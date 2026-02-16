@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Vedic Architect Pro</title>
+    <style>
+        :root { --gold: #f4b400; --red: #d32f2f; --border: #333; --bg: #f8f9fa; }
+        body { font-family: 'Segoe UI', system-ui; background: var(--bg); margin: 0; display: flex; flex-direction: column; align-items: center; }
+        
+        .header { padding: 20px; text-align: center; }
+        .main { display: flex; gap: 40px; padding: 20px; max-width: 1200px; width: 100%; justify-content: center; }
+
+        #sidebar { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); width: 160px; }
+        .planet-item { 
+            padding: 12px; margin-bottom: 8px; background: var(--gold); color: white; 
+            border-radius: 8px; cursor: grab; text-align: center; font-weight: 600;
+            transition: all 0.2s; user-select: none;
+        }
+        .planet-item.in-use { opacity: 0.3; pointer-events: none; }
+
+        .chart-container { position: relative; background: white; padding: 10px; border-radius: 15px; box-shadow: 0 15px 35px rgba(0,0,0,0.1); }
+        svg { display: block; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1)); }
+        .house { fill: #fff; stroke: var(--border); stroke-width: 1.5; transition: fill 0.2s; }
+        .house:hover { fill: #fffdf0; }
+        .house.drop-target { fill: #e8f5e8; stroke: #2e7d32; stroke-width: 2; }
+
+        .house-num { fill: #bbb; font-size: 14px; pointer-events: none; }
+        .zodiac-num { fill: #444; font-size: 16px; font-weight: bold; pointer-events: none; }
+        .planet-tag { fill: var(--red); font-size: 14px; font-weight: 700; cursor: pointer; user-select: none; }
+        
+        .controls { margin-top: 30px; display: flex; gap: 15px; }
+        button { padding: 12px 24px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.2s; }
+        .btn-clear { background: #eee; color: #333; }
+        .btn-clear:hover { background: #ddd; }
+        .btn-save { background: var(--gold); color: white; }
+        .btn-save:hover { background: #dda600; }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <h1>Vedic Chart Architect</h1>
+    <p>Drag planets into houses. Click a planet in the chart to return it.</p>
+</div>
+
+<div class="main">
+    <div id="sidebar"></div>
+    
+    <div class="chart-container">
+        <svg id="chart" width="600" height="600" viewBox="0 0 500 500">
+            <g id="houses-group"></g>
+            <g id="labels-group"></g>
+            <g id="planets-group"></g>
+        </svg>
+    </div>
+</div>
+
+<div class="controls">
+    <button class="btn-clear" onclick="resetChart()">Reset</button>
+    <button class="btn-save" onclick="saveChart()">Save</button>
+    <div style="display:flex; align-items:center; gap:10px;">
+        <label>Ascendant:</label>
+        <input type="number" id="lagnaInput" value="1" min="1" max="12" onchange="updateLagna(this.value)">
+    </div>
+</div>
+
+<script>
+const PLANETS = ["Sun", "Moon", "Mars", "Mercury", "Jupiter", "Venus", "Saturn", "Rahu", "Ketu"];
+const HOUSE_PATHS = [
+    { id: 1,  p: "250,250 125,125 250,0 375,125",   c: [250, 110], z: [250, 30] },
+    { id: 2,  p: "125,125 250,0 0,0",               c: [130, 60],  z: [50, 20]  },
+    { id: 3,  p: "125,125 0,250 0,0",               c: [60, 130],  z: [20, 50]  },
+    { id: 4,  p: "250,250 125,125 0,250 125,375",   c: [110, 250], z: [30, 250] },
+    { id: 5,  p: "125,375 0,250 0,500",             c: [60, 370],  z: [20, 450] },
+    { id: 6,  p: "125,375 250,500 0,500",           c: [130, 440], z: [50, 480] },
+    { id: 7,  p: "250,250 125,375 250,500 375,375", c: [250, 390], z: [250, 470]},
+    { id: 8,  p: "375,375 250,500 500,500",         c: [370, 440], z: [450, 480]},
+    { id: 9,  p: "375,375 500,250 500,500",         c: [440, 370], z: [480, 450]},
+    { id: 10, p: "250,250 375,125 500,250 375,375", c: [390, 250], z: [470, 250]},
+    { id: 11, p: "375,125 500,0 500,250",           c: [440, 130], z: [480, 50] },
+    { id: 12, p: "375,125 250,0 500,0",             c: [370, 60],  z: [450, 20] }
+];
+
+let state = {
+    lagna: 1,
+    placements: JSON.parse(localStorage.getItem('vedicChart')) || {}
+};
+
+let draggedPlanet = null;
+
+function init() {
+    renderSidebar();
+    renderHouses();
+    renderChart();
+    setupDragDrop();
+}
+
+function setupDragDrop() {
+    document.querySelectorAll('.planet-item').forEach(el => {
+        el.addEventListener('dragstart', (e) => {
+            draggedPlanet = e.target.textContent;
+            e.dataTransfer.setData('text/plain', draggedPlanet);
+        });
+        el.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            draggedPlanet = e.target.textContent;
+        });
+    });
+}
+
+function renderSidebar() {
+    const container = document.getElementById('sidebar');
+    container.innerHTML = PLANETS.map(p => `
+        <div class="planet-item ${state.placements[p] ? 'in-use' : ''}" 
+             draggable="true" ondragstart="onDragStart('${p}')">
+            ${p}
+        </div>
+    `).join('');
+}
+
+function renderHouses() {
+    const group = document.getElementById('houses-group');
+    group.innerHTML = HOUSE_PATHS.map(h => `
+        <polygon id="house-${h.id}" points="${h.p}" class="house" 
+                 ondragover="event.preventDefault(); this.classList.add('drop-target')"
+                 ondragleave="this.classList.remove('drop-target')"
+                 ondrop="onDrop(event, ${h.id})"></polygon>
+    `).join('');
+}
+
+function renderChart() {
+    const labelGroup = document.getElementById('labels-group');
+    const planetGroup = document.getElementById('planets-group');
+    labelGroup.innerHTML = '';
+    planetGroup.innerHTML = '';
+
+    HOUSE_PATHS.forEach(h => {
+        const sign = ((state.lagna + h.id - 2) % 12) + 1;
+        labelGroup.appendChild(createSVGText(h.z[0], h.z[1], sign, 'zodiac-num'));
+        labelGroup.appendChild(createSVGText(h.c[0], h.c[1] - 30, `H${h.id}`, 'house-num'));
+
+        const planetsInHouse = Object.keys(state.placements).filter(p => state.placements[p] === h.id);
+        planetsInHouse.forEach((p, i) => {
+            const pNode = createSVGText(h.c[0], h.c[1] + (i * 18), p, 'planet-tag');
+            pNode.onclick = () => removePlanet(p);
+            pNode.setAttribute('draggable', 'true');
+            pNode.ondragstart = () => onDragStart(p);
+            planetGroup.appendChild(pNode);
+        });
+    });
+}
+
+function onDragStart(p) { draggedPlanet = p; }
+
+function onDrop(e, houseId) {
+    e.preventDefault();
+    e.target.classList.remove('drop-target');
+    if (!draggedPlanet) return;
+    state.placements[draggedPlanet] = houseId;
+    draggedPlanet = null;
+    sync();
+}
+
+function removePlanet(p) {
+    delete state.placements[p];
+    sync();
+}
+
+function updateLagna(val) {
+    state.lagna = parseInt(val);
+    sync();
+}
+
+function resetChart() {
+    if (confirm('Clear all planets?')) {
+        state.placements = {};
+        sync();
+    }
+}
+
+function saveChart() {
+    localStorage.setItem('vedicChart', JSON.stringify(state.placements));
+    alert('Chart saved!');
+}
+
+function sync() {
+    renderSidebar();
+    renderChart();
+    setupDragDrop();
+}
+
+function createSVGText(x, y, txt, cls) {
+    const t = document.createElementNS("http://www.w3.org/2000/svg", "text");
+    t.setAttribute("x", x);
+    t.setAttribute("y", y);
+    t.setAttribute("class", cls);
+    t.setAttribute("text-anchor", "middle");
+    t.setAttribute("dominant-baseline", "middle");
+    t.textContent = txt;
+    return t;
+}
+
+init();
+</script>
+</body>
+</html>

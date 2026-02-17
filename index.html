@@ -2,771 +2,298 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vedic Chart · North Indian Style</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>VedicChart Pro | Universal Fix</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { 
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-            background: #f8fafc;
-            min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
+        :root {
+            --primary: #6366f1;
+            --bg-gradient: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            --card-bg: #ffffff;
+            --border-color: #cbd5e1;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
         }
-        
-        .app {
-            max-width: 1400px;
-            width: 100%;
-            background: white;
-            border-radius: 40px;
-            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);
-            padding: 30px;
+
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; touch-action: none; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-gradient);
+            color: var(--text-main);
+            margin: 0; padding: 10px;
+            display: flex; flex-direction: column; align-items: center;
+            height: 100vh; overflow: hidden;
         }
-        
-        .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 30px;
-            flex-wrap: wrap;
-            gap: 20px;
+
+        .header { margin-bottom: 5px; }
+        .header h1 {
+            font-weight: 800; font-size: 1.3rem; margin: 0;
+            background: linear-gradient(to right, var(--primary), #9333ea);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
         }
-        
-        .title h1 {
-            font-size: 1.8rem;
-            color: #0f172a;
+
+        .main-content {
+            width: 100%; max-width: 500px;
+            display: flex; flex-direction: column; gap: 8px; height: 100%;
         }
-        
-        .title p {
-            color: #475569;
-            margin-top: 5px;
+
+        .chart-card {
+            background: var(--card-bg);
+            padding: 5px; border-radius: 20px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+            border: 1px solid white;
+            flex-shrink: 1; max-height: 50vh; 
+            display: flex; align-items: center; justify-content: center;
         }
-        
-        .tools {
-            display: flex;
-            gap: 12px;
-            flex-wrap: wrap;
+
+        svg { width: 100%; height: auto; max-height: 100%; display: block; }
+
+        .house { fill: #ffffff; stroke: var(--border-color); stroke-width: 1.5; pointer-events: all; }
+        .house.drag-over { fill: #f0f4ff; stroke: var(--primary); }
+
+        .zodiac-num { fill: var(--primary); font-size: 18px; font-weight: 800; pointer-events: none; }
+        .sign-label { fill: var(--text-muted); font-size: 11px; font-weight: 700; text-transform: uppercase; pointer-events: none; }
+        .planet-tag { fill: var(--text-main); font-size: 16px; font-weight: 800; cursor: move; pointer-events: all; user-select: none; }
+
+        .panel {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(10px);
+            padding: 12px; border-radius: 20px; border: 1px solid white;
+            flex-grow: 1; overflow-y: auto; touch-action: pan-y;
         }
-        
-        .btn {
-            padding: 12px 24px;
-            border: none;
-            border-radius: 40px;
-            font-weight: 600;
-            font-size: 0.95rem;
-            cursor: pointer;
-            transition: all 0.2s;
-            background: #f1f5f9;
-            color: #1e293b;
-            display: flex;
-            align-items: center;
-            gap: 8px;
+
+        #planet-bank {
+            display: flex; flex-wrap: wrap; justify-content: center;
+            gap: 6px; margin-bottom: 12px;
         }
-        
-        .btn:hover {
-            background: #e2e8f0;
-            transform: translateY(-1px);
-        }
-        
-        .btn-primary {
-            background: #f4b400;
-            color: white;
-        }
-        
-        .btn-primary:hover {
-            background: #dda600;
-        }
-        
-        .lagna-control {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            background: #f1f5f9;
-            padding: 8px 20px;
-            border-radius: 40px;
-        }
-        
-        .lagna-control label {
-            font-weight: 600;
-            color: #475569;
-        }
-        
-        .lagna-control input {
-            width: 70px;
-            padding: 8px 12px;
-            border: 2px solid #cbd5e1;
-            border-radius: 30px;
-            text-align: center;
-            font-weight: 600;
-            font-size: 1rem;
-        }
-        
-        .lagna-control input:focus {
-            border-color: #f4b400;
-            outline: none;
-        }
-        
-        .main {
-            display: flex;
-            gap: 30px;
-            flex-wrap: wrap;
-        }
-        
-        /* Sidebar */
-        .planets-panel {
-            width: 200px;
-            background: #f8fafc;
-            border-radius: 30px;
-            padding: 20px;
-        }
-        
-        .planets-panel h3 {
-            color: #334155;
-            margin-bottom: 15px;
-            font-size: 1rem;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-        
-        .planet-list {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-        
+
         .planet-item {
-            padding: 14px;
-            background: white;
-            border: 2px solid #e2e8f0;
-            border-radius: 30px;
-            text-align: center;
-            font-weight: 700;
-            color: #0f172a;
-            cursor: grab;
-            transition: all 0.2s;
-            user-select: none;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.02);
-            position: relative;
+            width: 40px; height: 40px; 
+            display: flex; align-items: center; justify-content: center;
+            background: white; border: 2px solid #e2e8f0;
+            border-radius: 10px; font-weight: 800; font-size: 0.85rem;
+            cursor: move; user-select: none;
         }
-        
-        .planet-item:hover {
-            border-color: #f4b400;
-            transform: translateX(5px);
-            box-shadow: 0 10px 20px -10px rgba(244,180,0,0.3);
+
+        .planet-item.in-use { opacity: 0.2; pointer-events: none; }
+        .planet-item.lagna-planet { background: #eef2ff; color: var(--primary); border-color: #c7d2fe; }
+
+        #drag-proxy {
+            position: fixed; pointer-events: none; z-index: 9999;
+            background: var(--primary); color: white;
+            padding: 12px 18px; border-radius: 12px;
+            font-weight: 800; font-size: 1.4rem;
+            box-shadow: 0 12px 24px rgba(0,0,0,0.3);
+            display: none; transform: translate(-50%, -130%);
         }
-        
-        .planet-item.in-use {
-            opacity: 0.4;
-            cursor: not-allowed;
-            border-color: #cbd5e1;
-            background: #f1f5f9;
-            pointer-events: none;
-        }
-        
-        .planet-item.selected {
-            border-color: #d32f2f;
-            background: #d32f2f;
-            color: white;
-            transform: translateX(5px);
-        }
-        
-        .planet-item.dragging {
-            opacity: 0.5;
-            transform: scale(0.95);
-        }
-        
-        /* Chart */
-        .chart-wrapper {
-            flex: 1;
-            min-width: 500px;
-            background: white;
-            border-radius: 30px;
-            padding: 20px;
-            box-shadow: inset 0 2px 10px rgba(0,0,0,0.02);
-        }
-        
-        svg {
-            width: 100%;
-            height: auto;
-            display: block;
-        }
-        
-        .house {
-            fill: white;
-            stroke: #cbd5e1;
-            stroke-width: 1.5;
-            transition: all 0.2s;
-            cursor: pointer;
-        }
-        
-        .house:hover {
-            fill: #fff9e6;
-            stroke: #f4b400;
-            stroke-width: 2.5;
-        }
-        
-        .house.drop-target {
-            fill: #fef9e7;
-            stroke: #f4b400;
-            stroke-width: 3;
-            filter: drop-shadow(0 0 8px rgba(244,180,0,0.3));
-        }
-        
-        .house-number {
-            fill: #94a3b8;
-            font-size: 11px;
-            font-weight: 500;
-            pointer-events: none;
-        }
-        
-        .zodiac-symbol {
-            fill: #334155;
-            font-size: 14px;
-            font-weight: 700;
-            pointer-events: none;
-        }
-        
-        .planet-symbol {
-            fill: #d32f2f;
-            font-size: 12px;
-            font-weight: 700;
-            cursor: pointer;
-            transition: all 0.2s;
-            dominant-baseline: middle;
-            text-anchor: middle;
-            user-select: none;
-        }
-        
-        .planet-symbol:hover {
-            fill: #b71c1c;
-            font-size: 13px;
-            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
-        }
-        
-        .shortcuts-hint {
-            margin-top: 20px;
-            display: flex;
-            gap: 15px;
-            justify-content: center;
-            color: #64748b;
-            font-size: 0.85rem;
-        }
-        
-        .shortcuts-hint span {
-            background: #f1f5f9;
-            padding: 6px 15px;
-            border-radius: 30px;
-        }
-        
-        @media (max-width: 900px) {
-            .main {
-                flex-direction: column;
-            }
-            .planets-panel {
-                width: 100%;
-            }
-            .planet-list {
-                flex-direction: row;
-                overflow-x: auto;
-                padding-bottom: 10px;
-            }
-            .chart-wrapper {
-                min-width: auto;
-            }
+
+        .select-group { margin-bottom: 10px; display: flex; flex-direction: column; gap: 4px; touch-action: pan-y; }
+        .select-group label { font-size: 0.7rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;}
+        select { width: 100%; padding: 10px; border-radius: 10px; border: 2px solid #e2e8f0; font-weight: 700; touch-action: manipulation; }
+
+        .btn-reset {
+            width: 100%; padding: 12px; border: none; border-radius: 12px;
+            background: #1e293b; color: white; font-weight: 700; cursor: pointer; touch-action: manipulation;
         }
     </style>
 </head>
 <body>
-<div class="app">
-    <div class="header">
-        <div class="title">
-            <h1>🌿 Vedic Chart · North Indian</h1>
-            <p>Drag planets, double-click to remove, Ctrl+Z to undo</p>
-        </div>
-        <div class="tools">
-            <button class="btn" onclick="chart.exportImage()">📸 Export</button>
-            <button class="btn" onclick="chart.reset()">↺ Reset</button>
-            <button class="btn btn-primary" onclick="chart.save()">💾 Save</button>
-            <div class="lagna-control">
-                <label>Asc</label>
-                <input type="number" id="lagnaInput" value="1" min="1" max="12" step="1">
-            </div>
-        </div>
+
+<div class="header"><h1>VedicChart Pro</h1></div>
+
+<div class="main-content">
+    <div class="chart-card">
+        <svg id="chart" viewBox="0 0 500 500">
+            <g id="houses-group"></g>
+            <g id="labels-group"></g>
+            <g id="planets-group"></g>
+        </svg>
     </div>
-    
-    <div class="main">
-        <div class="planets-panel">
-            <h3>Planets · ፱ Grahas</h3>
-            <div id="planetList" class="planet-list"></div>
+
+    <div class="panel">
+        <div id="planet-bank"></div>
+        <div class="select-group">
+            <label>Ascendant (Lagna) Sign</label>
+            <select id="asc-select" onchange="updateAscendant(this.value)"></select>
         </div>
-        
-        <div class="chart-wrapper">
-            <svg id="chart" viewBox="0 0 500 500">
-                <g id="houses"></g>
-                <g id="labels"></g>
-                <g id="planets"></g>
-            </svg>
-        </div>
-    </div>
-    
-    <div class="shortcuts-hint">
-        <span>⬆️⬇️ Lagna arrows</span>
-        <span>⌨️ Tab navigation</span>
-        <span>⎌ Ctrl+Z undo</span>
-        <span>⎌ Ctrl+Y redo</span>
+        <button class="btn-reset" onclick="resetChart()">Reset Everything</button>
     </div>
 </div>
 
+<div id="drag-proxy"></div>
+
 <script>
-class VedicChart {
-    constructor() {
-        this.PLANETS = ["Sun", "Moon", "Mars", "Mercury", "Jupiter", "Venus", "Saturn", "Rahu", "Ketu"];
-        this.SYMBOLS = { Su: "Sun", Mo: "Moon", Ma: "Mars", Me: "Mercury", Ju: "Jupiter", Ve: "Venus", Sa: "Saturn", Ra: "Rahu", Ke: "Ketu" };
-        
-        // House paths with bounding boxes for collision detection
-        this.HOUSES = [
-            { id: 1, path: "250,250 125,125 250,0 375,125", center: [250,110], sign: [250,30], bbox: { minX:125, maxX:375, minY:0, maxY:125 } },
-            { id: 2, path: "125,125 250,0 0,0", center: [130,60], sign: [50,20], bbox: { minX:0, maxX:250, minY:0, maxY:125 } },
-            { id: 3, path: "125,125 0,250 0,0", center: [60,130], sign: [20,50], bbox: { minX:0, maxX:125, minY:0, maxY:250 } },
-            { id: 4, path: "250,250 125,125 0,250 125,375", center: [110,250], sign: [30,250], bbox: { minX:0, maxX:250, minY:125, maxY:375 } },
-            { id: 5, path: "125,375 0,250 0,500", center: [60,370], sign: [20,450], bbox: { minX:0, maxX:125, minY:250, maxY:500 } },
-            { id: 6, path: "125,375 250,500 0,500", center: [130,440], sign: [50,480], bbox: { minX:0, maxX:250, minY:375, maxY:500 } },
-            { id: 7, path: "250,250 125,375 250,500 375,375", center: [250,390], sign: [250,470], bbox: { minX:125, maxX:375, minY:250, maxY:500 } },
-            { id: 8, path: "375,375 250,500 500,500", center: [370,440], sign: [450,480], bbox: { minX:250, maxX:500, minY:375, maxY:500 } },
-            { id: 9, path: "375,375 500,250 500,500", center: [440,370], sign: [480,450], bbox: { minX:375, maxX:500, minY:250, maxY:500 } },
-            { id: 10, path: "250,250 375,125 500,250 375,375", center: [390,250], sign: [470,250], bbox: { minX:250, maxX:500, minY:125, maxY:375 } },
-            { id: 11, path: "375,125 500,0 500,250", center: [440,130], sign: [480,50], bbox: { minX:375, maxX:500, minY:0, maxY:250 } },
-            { id: 12, path: "375,125 250,0 500,0", center: [370,60], sign: [450,20], bbox: { minX:250, maxX:500, minY:0, maxY:125 } }
-        ];
-        
-        // State
-        this.state = {
-            lagna: parseInt(localStorage.getItem('vedicLagna')) || 1,
-            placements: JSON.parse(localStorage.getItem('vedicChart')) || {}
-        };
-        
-        // History
-        this.history = [JSON.stringify(this.state)];
-        this.historyIndex = 0;
-        
-        // UI State
-        this.selectedPlanet = null;
-        this.dragState = { active: false, planet: null, startX: 0, startY: 0 };
-        this.planetPositions = new Map(); // Track positions for collision detection
-        
-        // Bind methods
-        this.init = this.init.bind(this);
-        this.handleDragStart = this.handleDragStart.bind(this);
-        this.handleDragOver = this.handleDragOver.bind(this);
-        this.handleDrop = this.handleDrop.bind(this);
-        this.handleKeyDown = this.handleKeyDown.bind(this);
-        this.handlePlanetClick = this.handlePlanetClick.bind(this);
-        
-        this.init();
-    }
-    
-    init() {
-        this.render();
-        this.attachEvents();
-    }
-    
-    attachEvents() {
-        // Use event delegation - listeners attached to containers, not elements
-        document.getElementById('planetList').addEventListener('mousedown', this.handleDragStart);
-        document.getElementById('planetList').addEventListener('touchstart', this.handleDragStart, { passive: false });
-        
-        document.addEventListener('mousemove', this.handleDragMove.bind(this));
-        document.addEventListener('touchmove', this.handleDragMove.bind(this), { passive: false });
-        document.addEventListener('mouseup', this.handleDragEnd.bind(this));
-        document.addEventListener('touchend', this.handleDragEnd.bind(this));
-        
-        document.getElementById('houses').addEventListener('dragover', this.handleDragOver);
-        document.getElementById('houses').addEventListener('drop', this.handleDrop);
-        
-        // Click handlers for planets removal
-        document.getElementById('planets').addEventListener('click', this.handlePlanetClick);
-        document.getElementById('planets').addEventListener('dblclick', this.handlePlanetDoubleClick.bind(this));
-        
-        // Lagna input
-        const lagnaInput = document.getElementById('lagnaInput');
-        lagnaInput.addEventListener('change', (e) => {
-            this.updateLagna(parseInt(e.target.value));
-        });
-        lagnaInput.addEventListener('keyup', (e) => {
-            if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
-                this.debounceUpdateLagna(parseInt(e.target.value));
-            }
-        });
-        
-        // Keyboard shortcuts
-        document.addEventListener('keydown', this.handleKeyDown);
-        
-        // Debounce for lagna updates
-        this.lagnaTimeout = null;
-    }
-    
-    handleDragStart(e) {
-        const planetItem = e.target.closest('.planet-item');
-        if (!planetItem) return;
-        
-        const planet = planetItem.textContent;
-        if (this.state.placements[planet]) return; // Already placed
-        
-        e.preventDefault();
-        this.dragState.active = true;
-        this.dragState.planet = planet;
-        this.dragState.startX = e.clientX || e.touches[0].clientX;
-        this.dragState.startY = e.clientY || e.touches[0].clientY;
-        
-        // Create drag ghost
-        const ghost = planetItem.cloneNode(true);
-        ghost.style.position = 'fixed';
-        ghost.style.left = '-1000px';
-        ghost.style.top = '-1000px';
-        ghost.style.opacity = '0.5';
-        document.body.appendChild(ghost);
-        
-        if (e.dataTransfer) {
-            e.dataTransfer.setDragImage(ghost, 20, 20);
-            e.dataTransfer.setData('text/plain', planet);
-        }
-        
-        setTimeout(() => document.body.removeChild(ghost), 0);
-        
-        // Highlight drop targets
-        document.querySelectorAll('.house').forEach(h => h.classList.add('drop-target'));
-    }
-    
-    handleDragMove(e) {
-        if (!this.dragState.active) return;
-        e.preventDefault();
-        
-        // Find house under cursor
-        const x = e.clientX || (e.touches && e.touches[0]?.clientX);
-        const y = e.clientY || (e.touches && e.touches[0]?.clientY);
-        if (!x || !y) return;
-        
-        const element = document.elementFromPoint(x, y);
-        const house = element?.closest('.house');
-        
-        document.querySelectorAll('.house').forEach(h => h.classList.remove('active-drop'));
-        if (house) house.classList.add('active-drop');
-    }
-    
-    handleDragEnd(e) {
-        if (!this.dragState.active) return;
-        
-        const x = e.clientX || (e.changedTouches && e.changedTouches[0]?.clientX);
-        const y = e.clientY || (e.changedTouches && e.changedTouches[0]?.clientY);
-        
-        if (x && y) {
-            const element = document.elementFromPoint(x, y);
-            const house = element?.closest('.house');
-            
-            if (house && this.dragState.planet) {
-                const houseId = parseInt(house.id.split('-')[1]);
-                this.placePlanet(this.dragState.planet, houseId);
-            }
-        }
-        
-        this.dragState.active = false;
-        this.dragState.planet = null;
-        document.querySelectorAll('.house').forEach(h => {
-            h.classList.remove('drop-target', 'active-drop');
-        });
-    }
-    
-    handleDragOver(e) {
-        e.preventDefault();
-    }
-    
-    handleDrop(e) {
-        e.preventDefault();
-        const house = e.target.closest('.house');
-        if (!house) return;
-        
-        const houseId = parseInt(house.id.split('-')[1]);
-        const planet = e.dataTransfer.getData('text/plain');
-        
-        if (planet && !this.state.placements[planet]) {
-            this.placePlanet(planet, houseId);
-        }
-        
-        document.querySelectorAll('.house').forEach(h => {
-            h.classList.remove('drop-target', 'active-drop');
-        });
-    }
-    
-    handlePlanetClick(e) {
-        const planet = e.target.closest('.planet-symbol')?.textContent;
-        if (!planet) return;
-        
-        // Select on click, remove on double click
-        if (this.selectedPlanet === planet) {
-            this.removePlanet(planet);
-            this.selectedPlanet = null;
-        } else {
-            this.selectedPlanet = planet;
-            this.render();
-        }
-    }
-    
-    handlePlanetDoubleClick(e) {
-        const planet = e.target.closest('.planet-symbol')?.textContent;
-        if (planet) {
-            this.removePlanet(planet);
-        }
-    }
-    
-    handleKeyDown(e) {
-        // Ctrl+Z Undo
-        if (e.ctrlKey && e.key === 'z') {
-            e.preventDefault();
-            this.undo();
-        }
-        // Ctrl+Y Redo
-        if (e.ctrlKey && e.key === 'y') {
-            e.preventDefault();
-            this.redo();
-        }
-        // Escape deselect
-        if (e.key === 'Escape') {
-            this.selectedPlanet = null;
-            this.render();
-        }
-    }
-    
-    placePlanet(planet, houseId) {
-        // Check if house has capacity (max 7 planets per house)
-        const currentCount = Object.values(this.state.placements).filter(h => h === houseId).length;
-        if (currentCount >= 7) {
-            alert('Maximum 7 planets per house');
-            return;
-        }
-        
-        // Check if planet already placed (shouldn't happen but guard)
-        if (this.state.placements[planet]) return;
-        
-        // Update state
-        this.state.placements[planet] = houseId;
-        this.saveToHistory();
-        this.selectedPlanet = null;
-        this.render();
-    }
-    
-    removePlanet(planet) {
-        delete this.state.placements[planet];
-        this.saveToHistory();
-        this.render();
-    }
-    
-    updateLagna(value) {
-        let num = parseInt(value);
-        if (isNaN(num)) num = 1;
-        num = Math.min(12, Math.max(1, num));
-        
-        if (num !== this.state.lagna) {
-            this.state.lagna = num;
-            document.getElementById('lagnaInput').value = num;
-            this.saveToHistory();
-            this.render();
-        }
-    }
-    
-    debounceUpdateLagna(value) {
-        clearTimeout(this.lagnaTimeout);
-        this.lagnaTimeout = setTimeout(() => this.updateLagna(value), 300);
-    }
-    
-    saveToHistory() {
-        // Remove future history if we're not at the end
-        if (this.historyIndex < this.history.length - 1) {
-            this.history = this.history.slice(0, this.historyIndex + 1);
-        }
-        
-        this.history.push(JSON.stringify(this.state));
-        this.historyIndex = this.history.length - 1;
-        
-        // Keep history size manageable
-        if (this.history.length > 50) {
-            this.history.shift();
-            this.historyIndex--;
-        }
-    }
-    
-    undo() {
-        if (this.historyIndex > 0) {
-            this.historyIndex--;
-            this.state = JSON.parse(this.history[this.historyIndex]);
-            this.render();
-        }
-    }
-    
-    redo() {
-        if (this.historyIndex < this.history.length - 1) {
-            this.historyIndex++;
-            this.state = JSON.parse(this.history[this.historyIndex]);
-            this.render();
-        }
-    }
-    
-    reset() {
-        if (confirm('Clear all planets?')) {
-            this.state.placements = {};
-            this.saveToHistory();
-            this.render();
-        }
-    }
-    
-    save() {
-        localStorage.setItem('vedicChart', JSON.stringify(this.state.placements));
-        localStorage.setItem('vedicLagna', this.state.lagna);
-        
-        // Visual feedback
-        const btn = document.querySelector('.btn-primary');
-        const originalText = btn.textContent;
-        btn.textContent = '✓ Saved!';
-        setTimeout(() => btn.textContent = originalText, 1500);
-    }
-    
-    exportImage() {
-        // Simple SVG export
-        const svg = document.getElementById('chart');
-        const serializer = new XMLSerializer();
-        let source = serializer.serializeToString(svg);
-        
-        const blob = new Blob([source], { type: 'image/svg+xml' });
-        const url = URL.createObjectURL(blob);
-        
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = 'vedic-chart.svg';
-        link.click();
-        
-        URL.revokeObjectURL(url);
-    }
-    
-    // Calculate optimal position within house polygon
-    calculatePlanetPosition(houseId, index, total) {
-        const house = this.HOUSES.find(h => h.id === houseId);
-        if (!house) return [250, 250];
-        
-        const [cx, cy] = house.center;
-        const { minX, maxX, minY, maxY } = house.bbox;
-        
-        // Dynamic positioning based on polygon shape
-        if (total <= 3) {
-            // Simple vertical stack
-            const yOffset = (index - (total-1)/2) * 20;
-            return [cx, cy + yOffset];
-        } else {
-            // Grid layout within bounds
-            const cols = Math.ceil(Math.sqrt(total));
-            const rows = Math.ceil(total / cols);
-            const col = index % cols;
-            const row = Math.floor(index / cols);
-            
-            const xRange = (maxX - minX) * 0.6; // Use 60% of width
-            const yRange = (maxY - minY) * 0.6; // Use 60% of height
-            
-            const x = cx - xRange/2 + (col + 0.5) * (xRange / cols);
-            const y = cy - yRange/2 + (row + 0.5) * (yRange / rows);
-            
-            // Clamp to house bounds
-            return [
-                Math.min(maxX - 15, Math.max(minX + 15, x)),
-                Math.min(maxY - 15, Math.max(minY + 15, y))
-            ];
-        }
-    }
-    
-    render() {
-        this.renderSidebar();
-        this.renderHouses();
-        this.renderChart();
-    }
-    
-    renderSidebar() {
-        const container = document.getElementById('planetList');
-        container.innerHTML = this.PLANETS.map(p => {
-            const inUse = this.state.placements[p];
-            return `<div class="planet-item ${inUse ? 'in-use' : ''} ${this.selectedPlanet === p ? 'selected' : ''}" draggable="${!inUse}">${p}</div>`;
-        }).join('');
-    }
-    
-    renderHouses() {
-        const group = document.getElementById('houses');
-        group.innerHTML = this.HOUSES.map(h => 
-            `<polygon id="house-${h.id}" points="${h.path}" class="house"></polygon>`
-        ).join('');
-    }
-    
-    renderChart() {
-        const labelGroup = document.getElementById('labels');
-        const planetGroup = document.getElementById('planets');
-        labelGroup.innerHTML = '';
-        planetGroup.innerHTML = '';
-        
-        // Fixed zodiac symbols (North Indian style)
-        const ZODIAC = ['♈', '♉', '♊', '♋', '♌', '♍', '♎', '♏', '♐', '♑', '♒', '♓'];
-        
-        this.HOUSES.forEach(house => {
-            // House numbers
-            const houseNum = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-            houseNum.setAttribute('x', house.center[0]);
-            houseNum.setAttribute('y', house.center[1] - 30);
-            houseNum.setAttribute('class', 'house-number');
-            houseNum.setAttribute('text-anchor', 'middle');
-            houseNum.textContent = `H${house.id}`;
-            labelGroup.appendChild(houseNum);
-            
-            // Zodiac symbols (fixed positions)
-            const zodiac = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-            zodiac.setAttribute('x', house.sign[0]);
-            zodiac.setAttribute('y', house.sign[1]);
-            zodiac.setAttribute('class', 'zodiac-symbol');
-            zodiac.setAttribute('text-anchor', 'middle');
-            
-            // Sign based on lagna
-            const signIndex = (this.state.lagna + house.id - 2) % 12;
-            zodiac.textContent = ZODIAC[signIndex];
-            labelGroup.appendChild(zodiac);
-            
-            // Planets in this house
-            const planets = Object.entries(this.state.placements)
-                .filter(([_, h]) => h === house.id)
-                .map(([p]) => p);
-            
-            planets.forEach((planet, idx) => {
-                const [x, y] = this.calculatePlanetPosition(house.id, idx, planets.length);
-                
-                const planetText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-                planetText.setAttribute('x', x);
-                planetText.setAttribute('y', y);
-                planetText.setAttribute('class', 'planet-symbol');
-                
-                // Use symbol if available
-                const sym = Object.entries(this.SYMBOLS).find(([_, name]) => name === planet)?.[0] || planet.substring(0,2);
-                planetText.textContent = sym;
-                
-                // Store full name in data attribute
-                planetText.setAttribute('data-planet', planet);
-                
-                // Highlight if selected
-                if (this.selectedPlanet === planet) {
-                    planetText.setAttribute('style', 'fill: #f4b400; font-size: 14px;');
-                }
-                
-                planetGroup.appendChild(planetText);
-            });
-        });
-    }
+const SIGN_NAMES = ["Ar", "Ta", "Ge", "Cn", "Le", "Vi", "Li", "Sc", "Sg", "Cp", "Aq", "Pi"];
+const PLANETS = [
+    {full:"Sun",short:"Su"}, {full:"Moon",short:"Mo"}, {full:"Mars",short:"Ma"},
+    {full:"Mercury",short:"Me"}, {full:"Jupiter",short:"Ju"}, {full:"Venus",short:"Ve"},
+    {full:"Saturn",short:"Sa"}, {full:"Rahu",short:"Ra"}, {full:"Ketu",short:"Ke"},
+    {full:"Lagna",short:"La"}
+];
+
+const HOUSE_PATHS = [
+    { id:1, p:"250,250 125,125 250,0 375,125", c:[250,115], z:[250,35]},
+    { id:2, p:"125,125 250,0 0,0", c:[120,65], z:[45,25]},
+    { id:3, p:"125,125 0,250 0,0", c:[65,120], z:[25,45]},
+    { id:4, p:"250,250 125,125 0,250 125,375", c:[115,250], z:[35,250]},
+    { id:5, p:"125,375 0,250 0,500", c:[65,380], z:[25,455]},
+    { id:6, p:"125,375 250,500 0,500", c:[120,435], z:[45,475]},
+    { id:7, p:"250,250 125,375 250,500 375,375", c:[250,385], z:[250,465]},
+    { id:8, p:"375,375 250,500 500,500", c:[380,435], z:[455,475]},
+    { id:9, p:"375,375 500,250 500,500", c:[435,380], z:[475,455]},
+    { id:10, p:"250,250 375,125 500,250 375,375", c:[385,250], z:[465,250]},
+    { id:11, p:"375,125 500,0 500,250", c:[435,120], z:[475,45]},
+    { id:12, p:"375,125 250,0 500,0", c:[380,65], z:[455,25]}
+];
+
+let state = { placements: {"Lagna": 1}, ascSignIndex: 0 };
+let draggedPlanet = null;
+const proxy = document.getElementById('drag-proxy');
+
+function init() {
+    renderSignOptions();
+    renderPlanetBank();
+    renderHouses();
+    renderChart();
 }
 
-// Initialize
-const chart = new VedicChart();
+function renderSignOptions() {
+    const select = document.getElementById('asc-select');
+    select.innerHTML = SIGN_NAMES.map((name, i) => 
+        `<option value="${i}" ${state.ascSignIndex === i ? 'selected' : ''}>${i+1} - ${name}</option>`
+    ).join('');
+}
+
+function updateAscendant(index) {
+    state.ascSignIndex = parseInt(index);
+    sync();
+}
+
+function renderPlanetBank() {
+    const container = document.getElementById('planet-bank');
+    container.innerHTML = '';
+    PLANETS.forEach(p => {
+        const inUse = state.placements[p.full] !== undefined;
+        const div = document.createElement('div');
+        div.className = `planet-item ${inUse?'in-use':''} ${p.full==='Lagna'?'lagna-planet':''}`;
+        div.textContent = p.short;
+        if(!inUse) {
+            div.onmousedown = (e) => startDrag(e, p.full, p.short);
+            div.ontouchstart = (e) => startDrag(e, p.full, p.short);
+        }
+        container.appendChild(div);
+    });
+}
+
+function renderHouses() {
+    const group = document.getElementById('houses-group');
+    group.innerHTML = HOUSE_PATHS.map(h => `
+        <polygon data-house="${h.id}" points="${h.p}" class="house"></polygon>`).join('');
+}
+
+function renderChart() {
+    const labelGroup = document.getElementById('labels-group');
+    const planetGroup = document.getElementById('planets-group');
+    labelGroup.innerHTML = ''; planetGroup.innerHTML = '';
+    const lagnaHouse = state.placements["Lagna"] || 1;
+
+    HOUSE_PATHS.forEach(h => {
+        let houseNum = ((h.id - lagnaHouse + 12) % 12) + 1;
+        let zodiacNum = ((state.ascSignIndex + houseNum - 1) % 12) + 1;
+        let signName = SIGN_NAMES[zodiacNum - 1];
+        
+        labelGroup.appendChild(createText(h.z[0], h.z[1], zodiacNum, 'zodiac-num'));
+        labelGroup.appendChild(createText(h.c[0], h.c[1] - 35, signName, 'sign-label'));
+
+        const placedPlanets = Object.keys(state.placements).filter(p => state.placements[p] === h.id);
+        placedPlanets.forEach((p, i) => {
+            const short = PLANETS.find(x => x.full === p)?.short || p;
+            const node = createText(h.c[0], h.c[1] + (i * 22), short, 'planet-tag');
+            node.onmousedown = (e) => startDrag(e, p, short);
+            node.ontouchstart = (e) => startDrag(e, p, short);
+            node.onclick = (e) => { e.stopPropagation(); removePlanet(p); };
+            planetGroup.appendChild(node);
+        });
+    });
+}
+
+function startDrag(e, planetFull, planetShort) {
+    // Prevent browser default drag/select behavior
+    if(e.cancelable) e.preventDefault();
+    
+    draggedPlanet = planetFull;
+    const clientX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
+    const clientY = e.type.includes('touch') ? e.touches[0].clientY : e.clientY;
+    
+    proxy.textContent = planetShort;
+    proxy.style.display = 'block';
+    updateProxyPos(clientX, clientY);
+
+    const onMove = (me) => {
+        const x = me.type.includes('touch') ? me.touches[0].clientX : me.clientX;
+        const y = me.type.includes('touch') ? me.touches[0].clientY : me.clientY;
+        updateProxyPos(x, y);
+        
+        document.querySelectorAll('.house').forEach(h => h.classList.remove('drag-over'));
+        const target = document.elementFromPoint(x, y);
+        if(target && target.dataset.house) target.classList.add('drag-over');
+    };
+
+    const onEnd = (ee) => {
+        proxy.style.display = 'none';
+        const x = ee.type.includes('touch') ? ee.changedTouches[0].clientX : ee.clientX;
+        const y = ee.type.includes('touch') ? ee.changedTouches[0].clientY : ee.clientY;
+        
+        const target = document.elementFromPoint(x, y);
+        if (target && target.dataset.house) {
+            state.placements[draggedPlanet] = parseInt(target.dataset.house);
+        }
+        
+        document.querySelectorAll('.house').forEach(h => h.classList.remove('drag-over'));
+        window.removeEventListener('mousemove', onMove);
+        window.removeEventListener('mouseup', onEnd);
+        window.removeEventListener('touchmove', onMove);
+        window.removeEventListener('touchend', onEnd);
+        sync();
+    };
+
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onEnd);
+    window.addEventListener('touchmove', onMove, {passive: false});
+    window.addEventListener('touchend', onEnd);
+}
+
+function updateProxyPos(x, y) {
+    proxy.style.left = x + 'px';
+    proxy.style.top = y + 'px';
+}
+
+function removePlanet(p) {
+    if (p === "Lagna") return; 
+    delete state.placements[p];
+    sync();
+}
+
+function resetChart() {
+    state.placements = {"Lagna": 1};
+    state.ascSignIndex = 0;
+    document.getElementById('asc-select').value = 0;
+    sync();
+}
+
+function sync() { renderPlanetBank(); renderChart(); }
+
+function createText(x, y, t, cls) {
+    const node = document.createElementNS("http://www.w3.org/2000/svg", "text");
+    node.setAttribute("x", x); node.setAttribute("y", y);
+    node.setAttribute("class", cls); node.setAttribute("text-anchor", "middle");
+    node.setAttribute("dominant-baseline", "middle");
+    node.textContent = t;
+    return node;
+}
+
+init();
 </script>
 </body>
 </html>

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>VedicChart Pro | Universal Fix</title>
+    <title>VedicChart Pro | Multi-Planet Fix</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -53,8 +53,8 @@
         .house.drag-over { fill: #f0f4ff; stroke: var(--primary); }
 
         .zodiac-num { fill: var(--primary); font-size: 18px; font-weight: 800; pointer-events: none; }
-        .sign-label { fill: var(--text-muted); font-size: 11px; font-weight: 700; text-transform: uppercase; pointer-events: none; }
-        .planet-tag { fill: var(--text-main); font-size: 16px; font-weight: 800; cursor: move; pointer-events: all; user-select: none; }
+        .sign-label { fill: var(--text-muted); font-size: 10px; font-weight: 700; text-transform: uppercase; pointer-events: none; }
+        .planet-tag { fill: var(--text-main); font-size: 15px; font-weight: 800; cursor: move; pointer-events: all; user-select: none; }
 
         .panel {
             background: rgba(255, 255, 255, 0.8);
@@ -133,18 +133,18 @@ const PLANETS = [
 ];
 
 const HOUSE_PATHS = [
-    { id:1, p:"250,250 125,125 250,0 375,125", c:[250,115], z:[250,35]},
-    { id:2, p:"125,125 250,0 0,0", c:[120,65], z:[45,25]},
-    { id:3, p:"125,125 0,250 0,0", c:[65,120], z:[25,45]},
-    { id:4, p:"250,250 125,125 0,250 125,375", c:[115,250], z:[35,250]},
-    { id:5, p:"125,375 0,250 0,500", c:[65,380], z:[25,455]},
-    { id:6, p:"125,375 250,500 0,500", c:[120,435], z:[45,475]},
-    { id:7, p:"250,250 125,375 250,500 375,375", c:[250,385], z:[250,465]},
-    { id:8, p:"375,375 250,500 500,500", c:[380,435], z:[455,475]},
-    { id:9, p:"375,375 500,250 500,500", c:[435,380], z:[475,455]},
-    { id:10, p:"250,250 375,125 500,250 375,375", c:[385,250], z:[465,250]},
-    { id:11, p:"375,125 500,0 500,250", c:[435,120], z:[475,45]},
-    { id:12, p:"375,125 250,0 500,0", c:[380,65], z:[455,25]}
+    { id:1, p:"250,250 125,125 250,0 375,125", c:[250,125], z:[250,35]},
+    { id:2, p:"125,125 250,0 0,0", c:[125,65], z:[45,25]},
+    { id:3, p:"125,125 0,250 0,0", c:[65,125], z:[25,45]},
+    { id:4, p:"250,250 125,125 0,250 125,375", c:[125,250], z:[35,250]},
+    { id:5, p:"125,375 0,250 0,500", c:[65,375], z:[25,455]},
+    { id:6, p:"125,375 250,500 0,500", c:[125,435], z:[45,475]},
+    { id:7, p:"250,250 125,375 250,500 375,375", c:[250,375], z:[250,465]},
+    { id:8, p:"375,375 250,500 500,500", c:[375,435], z:[455,475]},
+    { id:9, p:"375,375 500,250 500,500", c:[435,375], z:[475,455]},
+    { id:10, p:"250,250 375,125 500,250 375,375", c:[375,250], z:[465,250]},
+    { id:11, p:"375,125 500,0 500,250", c:[435,125], z:[475,45]},
+    { id:12, p:"375,125 250,0 500,0", c:[375,65], z:[455,25]}
 ];
 
 let state = { placements: {"Lagna": 1}, ascSignIndex: 0 };
@@ -203,13 +203,22 @@ function renderChart() {
         let zodiacNum = ((state.ascSignIndex + houseNum - 1) % 12) + 1;
         let signName = SIGN_NAMES[zodiacNum - 1];
         
+        // Zodiac Number
         labelGroup.appendChild(createText(h.z[0], h.z[1], zodiacNum, 'zodiac-num'));
-        labelGroup.appendChild(createText(h.c[0], h.c[1] - 35, signName, 'sign-label'));
+        // Sign Text (offset to not overlap planets)
+        labelGroup.appendChild(createText(h.c[0], h.c[1] - 45, signName, 'sign-label'));
 
         const placedPlanets = Object.keys(state.placements).filter(p => state.placements[p] === h.id);
+        
+        // IMPROVED FITTING LOGIC: 
+        // Calculate dynamic vertical stacking starting from the center of the house
+        const spacing = 18;
+        const totalHeight = (placedPlanets.length - 1) * spacing;
+        const startY = h.c[1] - (totalHeight / 2) + 5; // Slight offset for aesthetics
+
         placedPlanets.forEach((p, i) => {
             const short = PLANETS.find(x => x.full === p)?.short || p;
-            const node = createText(h.c[0], h.c[1] + (i * 22), short, 'planet-tag');
+            const node = createText(h.c[0], startY + (i * spacing), short, 'planet-tag');
             node.onmousedown = (e) => startDrag(e, p, short);
             node.ontouchstart = (e) => startDrag(e, p, short);
             node.onclick = (e) => { e.stopPropagation(); removePlanet(p); };
@@ -219,9 +228,7 @@ function renderChart() {
 }
 
 function startDrag(e, planetFull, planetShort) {
-    // Prevent browser default drag/select behavior
     if(e.cancelable) e.preventDefault();
-    
     draggedPlanet = planetFull;
     const clientX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
     const clientY = e.type.includes('touch') ? e.touches[0].clientY : e.clientY;

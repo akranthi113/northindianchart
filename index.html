@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>VedicChart Pro | 3D Responsive</title>
+    <title>VedicChart Pro | Dynamic Stacking</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -32,11 +32,10 @@
 
         .app-container {
             width: 100%;
-            /* No max-width on mobile to use every pixel */
             max-width: 480px; 
             display: flex; 
             flex-direction: column;
-            padding: 8px; /* Minimal padding to maximize chart size */
+            padding: 8px;
             gap: 12px;
         }
 
@@ -46,15 +45,14 @@
             -webkit-background-clip: text; -webkit-text-fill-color: transparent;
         }
 
-        /* 3D Chart Wrapper - Optimized for maximum width */
         .chart-wrapper {
             background: var(--card-bg);
             border-radius: 20px; 
-            padding: 4px; /* Reduced to give SVG more room */
+            padding: 4px;
             box-shadow: var(--shadow-out);
             border: 1px solid rgba(255,255,255,0.6);
             width: 100%;
-            touch-action: none; /* Lock scroll during interaction */
+            touch-action: none;
         }
 
         svg { 
@@ -62,7 +60,6 @@
             height: auto; 
             display: block; 
             overflow: visible;
-            /* Fixes elementFromPoint alignment issues on some mobile browsers */
             touch-action: none; 
         }
 
@@ -73,16 +70,15 @@
         
         .house.drag-over { fill: #e0e7ff; stroke: var(--primary); stroke-width: 2.5; }
 
-        /* Use relative units or larger scale for internal SVG text */
         .zodiac-num { fill: #94a3b8; font-size: 20px; font-weight: 900; opacity: 0.5; pointer-events: none; }
         .sign-label { fill: var(--primary); font-size: 12px; font-weight: 800; pointer-events: none; }
         
         .planet-tag { 
-            font-size: 18px; font-weight: 800; cursor: move; 
-            paint-order: stroke; stroke: #ffffff; stroke-width: 5px;
+            font-weight: 800; cursor: move; 
+            paint-order: stroke; stroke: #ffffff; stroke-width: 4px;
+            transition: transform 0.1s ease;
         }
 
-        /* 3D Control Panel */
         .control-panel {
             background: #f1f5f9;
             border-radius: 20px; 
@@ -123,6 +119,7 @@
             width: 100%; padding: 14px; border: none; border-radius: 12px;
             background: #1e293b; color: white; font-weight: 700;
             box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+            cursor: pointer;
         }
 
         #drag-proxy {
@@ -165,7 +162,6 @@
 <div id="drag-proxy"></div>
 
 <script>
-// Logic remains core, but offsets are slightly adjusted for proportional look
 const SIGN_NAMES = ["Ar", "Ta", "Ge", "Cn", "Le", "Vi", "Li", "Sc", "Sg", "Cp", "Aq", "Pi"];
 const PLANETS = [
     {full:"Sun", short:"Su", color:"#f59e0b"}, {full:"Moon", short:"Mo", color:"#475569"}, 
@@ -250,20 +246,42 @@ function renderChart() {
         labelGroup.appendChild(createText(h.c[0], h.c[1] - 48, signName, 'sign-label'));
 
         const placedNames = Object.keys(state.placements).filter(p => state.placements[p] === h.id);
-        const spacing = 24; // Increased spacing for 500px unit system
-        const totalHeight = (placedNames.length - 1) * spacing;
-        const startY = h.c[1] - (totalHeight / 2) + 5;
+        
+        if (placedNames.length > 0) {
+            // DYNAMIC STACKING LOGIC
+            const count = placedNames.length;
+            const useTwoColumns = count > 5;
+            const fontSize = useTwoColumns ? 15 : 18;
+            const rowSpacing = useTwoColumns ? 22 : 26;
+            const colSpacing = 30;
 
-        placedNames.forEach((name, i) => {
-            const pData = PLANETS.find(x => x.full === name);
-            const node = createText(h.c[0], startY + (i * spacing), pData.short, 'planet-tag');
-            node.setAttribute('fill', pData.color);
-            node.style.fill = pData.color;
-            node.onmousedown = (e) => startDrag(e, name, pData.short, pData.color);
-            node.ontouchstart = (e) => startDrag(e, name, pData.short, pData.color);
-            node.onclick = (e) => { e.stopPropagation(); removePlanet(name); };
-            planetGroup.appendChild(node);
-        });
+            placedNames.forEach((name, i) => {
+                const pData = PLANETS.find(x => x.full === name);
+                let xPos = h.c[0];
+                let yPos = h.c[1];
+
+                if (useTwoColumns) {
+                    const col = i % 2 === 0 ? -1 : 1;
+                    const row = Math.floor(i / 2);
+                    const totalRows = Math.ceil(count / 2);
+                    xPos = h.c[0] + (col * (colSpacing / 2));
+                    const startY = h.c[1] - ((totalRows - 1) * rowSpacing) / 2;
+                    yPos = startY + (row * rowSpacing) + 4;
+                } else {
+                    const totalHeight = (count - 1) * rowSpacing;
+                    const startY = h.c[1] - (totalHeight / 2);
+                    yPos = startY + (i * rowSpacing) + 4;
+                }
+
+                const node = createText(xPos, yPos, pData.short, 'planet-tag');
+                node.setAttribute('fill', pData.color);
+                node.style.fontSize = fontSize + "px";
+                node.onmousedown = (e) => startDrag(e, name, pData.short, pData.color);
+                node.ontouchstart = (e) => startDrag(e, name, pData.short, pData.color);
+                node.onclick = (e) => { e.stopPropagation(); removePlanet(name); };
+                planetGroup.appendChild(node);
+            });
+        }
     });
 }
 
@@ -284,7 +302,6 @@ function startDrag(e, planetFull, planetShort, planetColor) {
         const y = me.type.includes('touch') ? me.touches[0].clientY : me.clientY;
         updateProxyPos(x, y);
         
-        // Visual feedback
         document.querySelectorAll('.house').forEach(h => h.classList.remove('drag-over'));
         const target = document.elementFromPoint(x, y);
         if(target && target.dataset.house) target.classList.add('drag-over');
@@ -296,7 +313,9 @@ function startDrag(e, planetFull, planetShort, planetColor) {
         const y = ee.type.includes('touch') ? ee.changedTouches[0].clientY : ee.clientY;
         
         const target = document.elementFromPoint(x, y);
-        if (target && target.dataset.house) state.placements[draggedPlanet] = parseInt(target.dataset.house);
+        if (target && target.dataset.house) {
+            state.placements[draggedPlanet] = parseInt(target.dataset.house);
+        }
         
         document.querySelectorAll('.house').forEach(h => h.classList.remove('drag-over'));
         window.removeEventListener('mousemove', onMove);

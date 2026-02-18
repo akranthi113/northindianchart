@@ -3,133 +3,168 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>VedicChart Pro | Multi-Planet Fix</title>
+    <title>VedicChart Pro | 3D Premium</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
     <style>
         :root {
             --primary: #6366f1;
-            --bg-gradient: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
-            --card-bg: #ffffff;
-            --border-color: #cbd5e1;
+            --accent: #8b5cf6;
+            --bg-body: #e2e8f0; /* Slightly darker for better shadow contrast */
+            --card-bg: #f8fafc;
             --text-main: #1e293b;
             --text-muted: #64748b;
-        }
+            
+            /* 3D Shadows */
+            --shadow-out: 8px 8px 16px #cbd5e1, -8px -8px 16px #ffffff;
+            --shadow-inset: inset 2px 2px 5px #cbd5e1, inset -2px -2px 5px #ffffff;
+            --shadow-btn: 4px 4px 10px #cbd5e1, -4px -4px 10px #ffffff;
 
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; touch-action: none; }
+            /* Planet Colors */
+            --clr-sun: #f59e0b; --clr-moo: #475569; --clr-mar: #ef4444;
+            --clr-mer: #10b981; --clr-jup: #d97706; --clr-ven: #db2777;
+            --clr-sat: #1e293b; --clr-nod: #64748b; --clr-lag: #6366f1;
+        }
 
         body {
             font-family: 'Inter', sans-serif;
-            background: var(--bg-gradient);
+            background-color: var(--bg-body);
             color: var(--text-main);
-            margin: 0; padding: 10px;
-            display: flex; flex-direction: column; align-items: center;
+            margin: 0; padding: 0;
+            display: flex; flex-direction: column;
             height: 100vh; overflow: hidden;
         }
 
-        .header { margin-bottom: 5px; }
+        .app-container {
+            width: 100%; max-width: 480px;
+            margin: 0 auto; display: flex; flex-direction: column;
+            height: 100%; padding: 16px; gap: 20px;
+        }
+
         .header h1 {
-            font-weight: 800; font-size: 1.3rem; margin: 0;
-            background: linear-gradient(to right, var(--primary), #9333ea);
+            text-align: center; font-weight: 800; font-size: 1.5rem; margin: 0;
+            background: linear-gradient(135deg, var(--primary), var(--accent));
             -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.05);
         }
 
-        .main-content {
-            width: 100%; max-width: 500px;
-            display: flex; flex-direction: column; gap: 8px; height: 100%;
-        }
-
-        .chart-card {
+        /* 3D Chart Canvas */
+        .chart-wrapper {
             background: var(--card-bg);
-            padding: 5px; border-radius: 20px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
-            border: 1px solid white;
-            flex-shrink: 1; max-height: 50vh; 
-            display: flex; align-items: center; justify-content: center;
+            border-radius: 32px; padding: 15px;
+            box-shadow: var(--shadow-out);
+            border: 1px solid rgba(255,255,255,0.6);
+            transform: perspective(1000px) rotateX(2deg);
         }
 
-        svg { width: 100%; height: auto; max-height: 100%; display: block; }
+        svg { width: 100%; height: auto; display: block; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.05)); }
 
-        .house { fill: #ffffff; stroke: var(--border-color); stroke-width: 1.5; pointer-events: all; }
-        .house.drag-over { fill: #f0f4ff; stroke: var(--primary); }
-
-        .zodiac-num { fill: var(--primary); font-size: 18px; font-weight: 800; pointer-events: none; }
-        .sign-label { fill: var(--text-muted); font-size: 10px; font-weight: 700; text-transform: uppercase; pointer-events: none; }
-        .planet-tag { fill: var(--text-main); font-size: 15px; font-weight: 800; cursor: move; pointer-events: all; user-select: none; }
-
-        .panel {
-            background: rgba(255, 255, 255, 0.8);
-            backdrop-filter: blur(10px);
-            padding: 12px; border-radius: 20px; border: 1px solid white;
-            flex-grow: 1; overflow-y: auto; touch-action: pan-y;
+        /* House styling for "Etched" look */
+        .house { 
+            fill: #f1f5f9; 
+            stroke: #cbd5e1; 
+            stroke-width: 1; 
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
+        }
+        .house.drag-over { 
+            fill: #e0e7ff; 
+            stroke: var(--primary); 
+            stroke-width: 2;
         }
 
-        #planet-bank {
-            display: flex; flex-wrap: wrap; justify-content: center;
-            gap: 6px; margin-bottom: 12px;
+        .zodiac-num { fill: #94a3b8; font-size: 18px; font-weight: 900; opacity: 0.5; }
+        .sign-label { fill: var(--primary); font-size: 10px; font-weight: 800; text-transform: uppercase; }
+        
+        /* 3D Floating Planet Tags */
+        .planet-tag { 
+            font-size: 16px; font-weight: 800; 
+            cursor: move; filter: drop-shadow(0 2px 3px rgba(0,0,0,0.2));
+            paint-order: stroke; stroke: #fff; stroke-width: 4px;
         }
+
+        /* 3D Control Panel */
+        .control-panel {
+            background: #f1f5f9;
+            border-radius: 32px; padding: 20px;
+            box-shadow: var(--shadow-inset);
+            flex-grow: 1; overflow-y: auto;
+            display: flex; flex-direction: column; gap: 20px;
+        }
+
+        .bank-label { font-size: 0.75rem; font-weight: 800; color: var(--text-muted); letter-spacing: 0.1em; margin-bottom: 8px; }
+
+        #planet-bank { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
 
         .planet-item {
-            width: 40px; height: 40px; 
+            width: 46px; height: 46px; 
             display: flex; align-items: center; justify-content: center;
-            background: white; border: 2px solid #e2e8f0;
-            border-radius: 10px; font-weight: 800; font-size: 0.85rem;
-            cursor: move; user-select: none;
+            background: var(--card-bg); 
+            border-radius: 16px; font-weight: 800;
+            box-shadow: var(--shadow-btn);
+            transition: all 0.2s ease;
         }
+        .planet-item:active { box-shadow: var(--shadow-inset); transform: scale(0.95); }
+        .planet-item.in-use { opacity: 0.3; box-shadow: none; background: transparent; border: 2px dashed #cbd5e1; }
 
-        .planet-item.in-use { opacity: 0.2; pointer-events: none; }
-        .planet-item.lagna-planet { background: #eef2ff; color: var(--primary); border-color: #c7d2fe; }
-
-        #drag-proxy {
-            position: fixed; pointer-events: none; z-index: 9999;
-            background: var(--primary); color: white;
-            padding: 12px 18px; border-radius: 12px;
-            font-weight: 800; font-size: 1.4rem;
-            box-shadow: 0 12px 24px rgba(0,0,0,0.3);
-            display: none; transform: translate(-50%, -130%);
+        select {
+            width: 100%; padding: 16px; border-radius: 18px;
+            border: none; background: var(--card-bg);
+            box-shadow: var(--shadow-btn);
+            font-family: inherit; font-weight: 700; color: var(--text-main);
+            outline: none;
         }
-
-        .select-group { margin-bottom: 10px; display: flex; flex-direction: column; gap: 4px; touch-action: pan-y; }
-        .select-group label { font-size: 0.7rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;}
-        select { width: 100%; padding: 10px; border-radius: 10px; border: 2px solid #e2e8f0; font-weight: 700; touch-action: manipulation; }
 
         .btn-reset {
-            width: 100%; padding: 12px; border: none; border-radius: 12px;
-            background: #1e293b; color: white; font-weight: 700; cursor: pointer; touch-action: manipulation;
+            width: 100%; padding: 16px; border: none; border-radius: 18px;
+            background: #1e293b; color: white; font-weight: 700;
+            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.2);
+            transition: transform 0.2s;
+        }
+        .btn-reset:active { transform: translateY(2px); }
+
+        #drag-proxy {
+            position: fixed; pointer-events: none; z-index: 100;
+            color: white; padding: 15px 25px; border-radius: 20px;
+            font-weight: 800; font-size: 1.8rem;
+            box-shadow: 0 30px 60px rgba(0,0,0,0.4);
+            display: none; transform: translate(-50%, -150%);
         }
     </style>
 </head>
 <body>
-
-<div class="header"><h1>VedicChart Pro</h1></div>
-
-<div class="main-content">
-    <div class="chart-card">
+<div class="app-container">
+    <header class="header"><h1>VedicChart Pro 3D</h1></header>
+    <main class="chart-wrapper">
         <svg id="chart" viewBox="0 0 500 500">
             <g id="houses-group"></g>
             <g id="labels-group"></g>
             <g id="planets-group"></g>
         </svg>
-    </div>
-
-    <div class="panel">
-        <div id="planet-bank"></div>
-        <div class="select-group">
-            <label>Ascendant (Lagna) Sign</label>
+    </main>
+    <section class="control-panel">
+        <div>
+            <div class="bank-label">Planet Reservoir</div>
+            <div id="planet-bank"></div>
+        </div>
+        <div class="form-row">
+            <div class="bank-label">Rising Sign (Lagna)</div>
             <select id="asc-select" onchange="updateAscendant(this.value)"></select>
         </div>
-        <button class="btn-reset" onclick="resetChart()">Reset Everything</button>
-    </div>
+        <button class="btn-reset" onclick="resetChart()">Clear Workspace</button>
+    </section>
 </div>
-
 <div id="drag-proxy"></div>
 
 <script>
+/* Keep all your original JavaScript logic here - it is perfectly compatible */
+// ... (Insert your existing JS code here) ...
+// Note: Ensure the 'createText' function and 'renderChart' stay the same to preserve core logic.
 const SIGN_NAMES = ["Ar", "Ta", "Ge", "Cn", "Le", "Vi", "Li", "Sc", "Sg", "Cp", "Aq", "Pi"];
 const PLANETS = [
-    {full:"Sun",short:"Su"}, {full:"Moon",short:"Mo"}, {full:"Mars",short:"Ma"},
-    {full:"Mercury",short:"Me"}, {full:"Jupiter",short:"Ju"}, {full:"Venus",short:"Ve"},
-    {full:"Saturn",short:"Sa"}, {full:"Rahu",short:"Ra"}, {full:"Ketu",short:"Ke"},
-    {full:"Lagna",short:"La"}
+    {full:"Sun", short:"Su", color:"#f59e0b"}, {full:"Moon", short:"Mo", color:"#475569"}, 
+    {full:"Mars", short:"Ma", color:"#ef4444"}, {full:"Mercury", short:"Me", color:"#10b981"}, 
+    {full:"Jupiter", short:"Ju", color:"#d97706"}, {full:"Venus", short:"Ve", color:"#db2777"},
+    {full:"Saturn", short:"Sa", color:"#1e293b"}, {full:"Rahu", short:"Ra", color:"#64748b"}, 
+    {full:"Ketu", short:"Ke", color:"#64748b"}, {full:"Lagna", short:"La", color:"#6366f1"}
 ];
 
 const HOUSE_PATHS = [
@@ -161,7 +196,7 @@ function init() {
 function renderSignOptions() {
     const select = document.getElementById('asc-select');
     select.innerHTML = SIGN_NAMES.map((name, i) => 
-        `<option value="${i}" ${state.ascSignIndex === i ? 'selected' : ''}>${i+1} - ${name}</option>`
+        `<option value="${i}" ${state.ascSignIndex === i ? 'selected' : ''}>Sign ${i+1} (${name})</option>`
     ).join('');
 }
 
@@ -176,11 +211,12 @@ function renderPlanetBank() {
     PLANETS.forEach(p => {
         const inUse = state.placements[p.full] !== undefined;
         const div = document.createElement('div');
-        div.className = `planet-item ${inUse?'in-use':''} ${p.full==='Lagna'?'lagna-planet':''}`;
+        div.className = `planet-item ${inUse?'in-use':''}`;
+        div.style.color = p.color;
         div.textContent = p.short;
         if(!inUse) {
-            div.onmousedown = (e) => startDrag(e, p.full, p.short);
-            div.ontouchstart = (e) => startDrag(e, p.full, p.short);
+            div.onmousedown = (e) => startDrag(e, p.full, p.short, p.color);
+            div.ontouchstart = (e) => startDrag(e, p.full, p.short, p.color);
         }
         container.appendChild(div);
     });
@@ -203,37 +239,35 @@ function renderChart() {
         let zodiacNum = ((state.ascSignIndex + houseNum - 1) % 12) + 1;
         let signName = SIGN_NAMES[zodiacNum - 1];
         
-        // Zodiac Number
         labelGroup.appendChild(createText(h.z[0], h.z[1], zodiacNum, 'zodiac-num'));
-        // Sign Text (offset to not overlap planets)
         labelGroup.appendChild(createText(h.c[0], h.c[1] - 45, signName, 'sign-label'));
 
-        const placedPlanets = Object.keys(state.placements).filter(p => state.placements[p] === h.id);
-        
-        // IMPROVED FITTING LOGIC: 
-        // Calculate dynamic vertical stacking starting from the center of the house
-        const spacing = 18;
-        const totalHeight = (placedPlanets.length - 1) * spacing;
-        const startY = h.c[1] - (totalHeight / 2) + 5; // Slight offset for aesthetics
+        const placedNames = Object.keys(state.placements).filter(p => state.placements[p] === h.id);
+        const spacing = 22;
+        const totalHeight = (placedNames.length - 1) * spacing;
+        const startY = h.c[1] - (totalHeight / 2) + 5;
 
-        placedPlanets.forEach((p, i) => {
-            const short = PLANETS.find(x => x.full === p)?.short || p;
-            const node = createText(h.c[0], startY + (i * spacing), short, 'planet-tag');
-            node.onmousedown = (e) => startDrag(e, p, short);
-            node.ontouchstart = (e) => startDrag(e, p, short);
-            node.onclick = (e) => { e.stopPropagation(); removePlanet(p); };
+        placedNames.forEach((name, i) => {
+            const pData = PLANETS.find(x => x.full === name);
+            const node = createText(h.c[0], startY + (i * spacing), pData.short, 'planet-tag');
+            node.setAttribute('fill', pData.color);
+            node.style.fill = pData.color;
+            node.onmousedown = (e) => startDrag(e, name, pData.short, pData.color);
+            node.ontouchstart = (e) => startDrag(e, name, pData.short, pData.color);
+            node.onclick = (e) => { e.stopPropagation(); removePlanet(name); };
             planetGroup.appendChild(node);
         });
     });
 }
 
-function startDrag(e, planetFull, planetShort) {
+function startDrag(e, planetFull, planetShort, planetColor) {
     if(e.cancelable) e.preventDefault();
     draggedPlanet = planetFull;
     const clientX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
     const clientY = e.type.includes('touch') ? e.touches[0].clientY : e.clientY;
     
     proxy.textContent = planetShort;
+    proxy.style.backgroundColor = planetColor;
     proxy.style.display = 'block';
     updateProxyPos(clientX, clientY);
 
@@ -241,7 +275,6 @@ function startDrag(e, planetFull, planetShort) {
         const x = me.type.includes('touch') ? me.touches[0].clientX : me.clientX;
         const y = me.type.includes('touch') ? me.touches[0].clientY : me.clientY;
         updateProxyPos(x, y);
-        
         document.querySelectorAll('.house').forEach(h => h.classList.remove('drag-over'));
         const target = document.elementFromPoint(x, y);
         if(target && target.dataset.house) target.classList.add('drag-over');
@@ -251,12 +284,8 @@ function startDrag(e, planetFull, planetShort) {
         proxy.style.display = 'none';
         const x = ee.type.includes('touch') ? ee.changedTouches[0].clientX : ee.clientX;
         const y = ee.type.includes('touch') ? ee.changedTouches[0].clientY : ee.clientY;
-        
         const target = document.elementFromPoint(x, y);
-        if (target && target.dataset.house) {
-            state.placements[draggedPlanet] = parseInt(target.dataset.house);
-        }
-        
+        if (target && target.dataset.house) state.placements[draggedPlanet] = parseInt(target.dataset.house);
         document.querySelectorAll('.house').forEach(h => h.classList.remove('drag-over'));
         window.removeEventListener('mousemove', onMove);
         window.removeEventListener('mouseup', onEnd);

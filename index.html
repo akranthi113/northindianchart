@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>VedicChart Pro | 3D Premium</title>
+    <title>VedicChart Pro | 3D Responsive</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -13,9 +13,9 @@
             --card-bg: #f8fafc;
             --text-main: #1e293b;
             --text-muted: #64748b;
-            --shadow-out: 8px 8px 16px #cbd5e1, -8px -8px 16px #ffffff;
+            --shadow-out: 6px 6px 12px #cbd5e1, -6px -6px 12px #ffffff;
             --shadow-inset: inset 2px 2px 5px #cbd5e1, inset -2px -2px 5px #ffffff;
-            --shadow-btn: 4px 4px 10px #cbd5e1, -4px -4px 10px #ffffff;
+            --shadow-btn: 4px 4px 8px #cbd5e1, -4px -4px 8px #ffffff;
         }
 
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -25,38 +25,36 @@
             background-color: var(--bg-body);
             color: var(--text-main);
             margin: 0; padding: 0;
-            /* Allow vertical scrolling */
             min-height: 100vh;
-            overflow-x: hidden;
-            overflow-y: auto;
+            display: flex;
+            justify-content: center;
         }
 
         .app-container {
-            width: 100%; 
-            max-width: 480px;
-            margin: 0 auto; 
+            width: 100%;
+            /* No max-width on mobile to use every pixel */
+            max-width: 480px; 
             display: flex; 
             flex-direction: column;
-            padding: 16px;
-            gap: 16px;
+            padding: 8px; /* Minimal padding to maximize chart size */
+            gap: 12px;
         }
 
         .header h1 {
-            text-align: center; font-weight: 800; font-size: 1.4rem; margin: 8px 0;
+            text-align: center; font-weight: 800; font-size: 1.2rem; margin: 4px 0;
             background: linear-gradient(135deg, var(--primary), var(--accent));
             -webkit-background-clip: text; -webkit-text-fill-color: transparent;
         }
 
-        /* 3D Chart Wrapper - Ensures it stays in bounds */
+        /* 3D Chart Wrapper - Optimized for maximum width */
         .chart-wrapper {
             background: var(--card-bg);
-            border-radius: 28px; 
-            padding: 8px;
+            border-radius: 20px; 
+            padding: 4px; /* Reduced to give SVG more room */
             box-shadow: var(--shadow-out);
             border: 1px solid rgba(255,255,255,0.6);
             width: 100%;
-            /* touch-action: pan-y; allows scrolling while touching the chart */
-            touch-action: pan-y; 
+            touch-action: none; /* Lock scroll during interaction */
         }
 
         svg { 
@@ -64,77 +62,75 @@
             height: auto; 
             display: block; 
             overflow: visible;
+            /* Fixes elementFromPoint alignment issues on some mobile browsers */
+            touch-action: none; 
         }
 
         .house { 
-            fill: #f8fafc; stroke: #cbd5e1; stroke-width: 1.2; 
+            fill: #fcfdfe; stroke: #d1d5db; stroke-width: 1.2; 
             transition: fill 0.2s; pointer-events: all;
         }
         
-        .house.drag-over { fill: #eef2ff; stroke: var(--primary); stroke-width: 2; }
+        .house.drag-over { fill: #e0e7ff; stroke: var(--primary); stroke-width: 2.5; }
 
-        .zodiac-num { fill: #94a3b8; font-size: 17px; font-weight: 900; opacity: 0.6; pointer-events: none; }
-        .sign-label { fill: var(--primary); font-size: 10px; font-weight: 800; pointer-events: none; }
+        /* Use relative units or larger scale for internal SVG text */
+        .zodiac-num { fill: #94a3b8; font-size: 20px; font-weight: 900; opacity: 0.5; pointer-events: none; }
+        .sign-label { fill: var(--primary); font-size: 12px; font-weight: 800; pointer-events: none; }
         
         .planet-tag { 
-            font-size: 16px; font-weight: 800; cursor: move; 
-            paint-order: stroke; stroke: #ffffff; stroke-width: 4px;
+            font-size: 18px; font-weight: 800; cursor: move; 
+            paint-order: stroke; stroke: #ffffff; stroke-width: 5px;
         }
 
         /* 3D Control Panel */
         .control-panel {
             background: #f1f5f9;
-            border-radius: 24px; 
-            padding: 20px;
+            border-radius: 20px; 
+            padding: 16px;
             box-shadow: var(--shadow-inset);
             display: flex; 
             flex-direction: column; 
-            gap: 20px;
-            margin-bottom: 24px; /* Space at bottom for scrolling */
+            gap: 16px;
+            margin-bottom: 20px;
         }
 
-        .bank-label { font-size: 0.7rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
+        .bank-label { font-size: 0.65rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
 
-        #planet-bank { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
+        #planet-bank { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
 
         .planet-item {
-            width: 44px; height: 44px; 
+            width: 40px; height: 40px; 
             display: flex; align-items: center; justify-content: center;
             background: var(--card-bg); 
-            border-radius: 12px; font-weight: 800; font-size: 0.9rem;
+            border-radius: 10px; font-weight: 800; font-size: 0.85rem;
             box-shadow: var(--shadow-btn);
             cursor: move;
         }
         
-        .planet-item:active { transform: scale(0.95); box-shadow: var(--shadow-inset); }
         .planet-item.in-use { opacity: 0.2; box-shadow: none; border: 1px dashed #cbd5e1; pointer-events: none; }
 
-        .form-row { display: flex; flex-direction: column; gap: 8px; }
-
         select {
-            width: 100%; padding: 14px; border-radius: 14px;
+            width: 100%; padding: 12px; border-radius: 12px;
             border: none; background: var(--card-bg);
             box-shadow: var(--shadow-btn);
-            font-family: inherit; font-weight: 700;
-            font-size: 0.95rem; color: var(--text-main);
+            font-family: inherit; font-weight: 700; font-size: 0.9rem;
             appearance: none;
             background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236366f1'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
             background-repeat: no-repeat; background-position: right 12px center; background-size: 16px;
         }
 
         .btn-reset {
-            width: 100%; padding: 16px; border: none; border-radius: 14px;
+            width: 100%; padding: 14px; border: none; border-radius: 12px;
             background: #1e293b; color: white; font-weight: 700;
-            font-size: 1rem; cursor: pointer;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.15);
         }
 
         #drag-proxy {
-            position: fixed; pointer-events: none; z-index: 1000;
-            color: white; padding: 14px 24px; border-radius: 18px;
-            font-weight: 800; font-size: 1.6rem;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.4);
-            display: none; transform: translate(-50%, -140%);
+            position: fixed; pointer-events: none; z-index: 9999;
+            color: white; padding: 12px 20px; border-radius: 14px;
+            font-weight: 800; font-size: 1.4rem;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            display: none; transform: translate(-50%, -130%);
         }
     </style>
 </head>
@@ -144,7 +140,7 @@
     <header class="header"><h1>VedicChart Pro</h1></header>
 
     <main class="chart-wrapper">
-        <svg id="chart" viewBox="0 0 500 500">
+        <svg id="chart" viewBox="0 0 500 500" preserveAspectRatio="xMidYMid meet">
             <g id="houses-group"></g>
             <g id="labels-group"></g>
             <g id="planets-group"></g>
@@ -158,17 +154,18 @@
         </div>
 
         <div class="form-row">
-            <div class="bank-label">Rising Sign (Lagna)</div>
+            <div class="bank-label">Lagna Sign</div>
             <select id="asc-select" onchange="updateAscendant(this.value)"></select>
         </div>
 
-        <button class="btn-reset" onclick="resetChart()">Clear All Placements</button>
+        <button class="btn-reset" onclick="resetChart()">Clear Workspace</button>
     </section>
 </div>
 
 <div id="drag-proxy"></div>
 
 <script>
+// Logic remains core, but offsets are slightly adjusted for proportional look
 const SIGN_NAMES = ["Ar", "Ta", "Ge", "Cn", "Le", "Vi", "Li", "Sc", "Sg", "Cp", "Aq", "Pi"];
 const PLANETS = [
     {full:"Sun", short:"Su", color:"#f59e0b"}, {full:"Moon", short:"Mo", color:"#475569"}, 
@@ -195,7 +192,6 @@ const HOUSE_PATHS = [
 
 let state = { placements: {"Lagna": 1}, ascSignIndex: 0 };
 let draggedPlanet = null;
-const proxy = document.getElementById('drag-proxy');
 
 function init() {
     renderSignOptions();
@@ -251,10 +247,10 @@ function renderChart() {
         let signName = SIGN_NAMES[zodiacNum - 1];
         
         labelGroup.appendChild(createText(h.z[0], h.z[1], zodiacNum, 'zodiac-num'));
-        labelGroup.appendChild(createText(h.c[0], h.c[1] - 45, signName, 'sign-label'));
+        labelGroup.appendChild(createText(h.c[0], h.c[1] - 48, signName, 'sign-label'));
 
         const placedNames = Object.keys(state.placements).filter(p => state.placements[p] === h.id);
-        const spacing = 22;
+        const spacing = 24; // Increased spacing for 500px unit system
         const totalHeight = (placedNames.length - 1) * spacing;
         const startY = h.c[1] - (totalHeight / 2) + 5;
 
@@ -277,6 +273,7 @@ function startDrag(e, planetFull, planetShort, planetColor) {
     const clientX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
     const clientY = e.type.includes('touch') ? e.touches[0].clientY : e.clientY;
     
+    const proxy = document.getElementById('drag-proxy');
     proxy.textContent = planetShort;
     proxy.style.backgroundColor = planetColor;
     proxy.style.display = 'block';
@@ -286,6 +283,8 @@ function startDrag(e, planetFull, planetShort, planetColor) {
         const x = me.type.includes('touch') ? me.touches[0].clientX : me.clientX;
         const y = me.type.includes('touch') ? me.touches[0].clientY : me.clientY;
         updateProxyPos(x, y);
+        
+        // Visual feedback
         document.querySelectorAll('.house').forEach(h => h.classList.remove('drag-over'));
         const target = document.elementFromPoint(x, y);
         if(target && target.dataset.house) target.classList.add('drag-over');
@@ -295,8 +294,10 @@ function startDrag(e, planetFull, planetShort, planetColor) {
         proxy.style.display = 'none';
         const x = ee.type.includes('touch') ? ee.changedTouches[0].clientX : ee.clientX;
         const y = ee.type.includes('touch') ? ee.changedTouches[0].clientY : ee.clientY;
+        
         const target = document.elementFromPoint(x, y);
         if (target && target.dataset.house) state.placements[draggedPlanet] = parseInt(target.dataset.house);
+        
         document.querySelectorAll('.house').forEach(h => h.classList.remove('drag-over'));
         window.removeEventListener('mousemove', onMove);
         window.removeEventListener('mouseup', onEnd);
@@ -312,6 +313,7 @@ function startDrag(e, planetFull, planetShort, planetColor) {
 }
 
 function updateProxyPos(x, y) {
+    const proxy = document.getElementById('drag-proxy');
     proxy.style.left = x + 'px';
     proxy.style.top = y + 'px';
 }
